@@ -5,6 +5,7 @@ const Razorpay = require("razorpay");
 const Show = require("../models/showModel");
 const Booking = require("../models/bookingModel");
 const Payment = require("../models/paymentModel");
+const { sendBookingConfirmation } = require("../utils/mailer");
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -153,6 +154,10 @@ exports.verifyPayment = async (req, res) => {
     booking.status = "confirmed";
     booking.expiresAt = undefined;
     await booking.save();
+        // Send the email in the background. A failure here never breaks the booking.
+    sendBookingConfirmation(booking._id).catch((err) =>
+      console.error("Email error:", err.message)
+    );
 
     res.json({
       message: "Payment verified. Booking confirmed!",
